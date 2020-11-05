@@ -1,0 +1,65 @@
+import * as Y from 'yjs';
+import { SyncNode } from '../model';
+import { toSlateDoc } from '../utils/convert';
+const isTree = (node) => !!SyncNode.getChildren(node);
+/**
+ * Returns the SyncNode referenced by the path
+ *
+ * @param doc
+ * @param path
+ */
+export const getTarget = (doc, path) => {
+    const iterate = (current, idx) => {
+        var _a;
+        if (!isTree(current) || !((_a = SyncNode.getChildren(current)) === null || _a === void 0 ? void 0 : _a.get(idx))) {
+            throw new TypeError(`path ${path.toString()} does not match doc ${JSON.stringify(toSlateDoc(doc))}`);
+        }
+        return SyncNode.getChildren(current).get(idx);
+    };
+    return path.reduce(iterate, doc);
+};
+const getParentPath = (path, level = 1) => {
+    if (level > path.length) {
+        throw new TypeError('requested ancestor is higher than root');
+    }
+    return [path[path.length - level], path.slice(0, path.length - level)];
+};
+export const getParent = (doc, path, level = 1) => {
+    const [idx, parentPath] = getParentPath(path, level);
+    return [getTarget(doc, parentPath), idx];
+};
+/**
+ * Returns the document path of a sync item
+ *
+ * @param item
+ */
+export const getSyncItemPath = (item) => {
+    if (!item) {
+        return [];
+    }
+    const parent = item.parent;
+    if (parent instanceof Y.Array) {
+        return [...getSyncItemPath(parent._item), getArrayPosition(item)];
+    }
+    if (parent instanceof Y.Map) {
+        return getSyncItemPath(parent._item);
+    }
+    throw new Error(`Unknown parent type ${parent}`);
+};
+/**
+ * Returns the position of the sync item inside inside it's parent array.
+ *
+ * @param item
+ */
+export const getArrayPosition = (item) => {
+    let i = 0;
+    let c = item.parent._start;
+    while (c !== item && c !== null) {
+        if (!c.deleted) {
+            i++;
+        }
+        c = c.right;
+    }
+    return i;
+};
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi9zcmMvcGF0aC9pbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFDQSxPQUFPLEtBQUssQ0FBQyxNQUFNLEtBQUssQ0FBQztBQUN6QixPQUFPLEVBQXdCLFFBQVEsRUFBRSxNQUFNLFVBQVUsQ0FBQztBQUMxRCxPQUFPLEVBQUUsVUFBVSxFQUFFLE1BQU0sa0JBQWtCLENBQUM7QUFFOUMsTUFBTSxNQUFNLEdBQUcsQ0FBQyxJQUFjLEVBQVcsRUFBRSxDQUFDLENBQUMsQ0FBQyxRQUFRLENBQUMsV0FBVyxDQUFDLElBQUksQ0FBQyxDQUFDO0FBRXpFOzs7OztHQUtHO0FBQ0gsTUFBTSxDQUFDLE1BQU0sU0FBUyxHQUFHLENBQUMsR0FBWSxFQUFFLElBQVUsRUFBd0IsRUFBRTtJQUMxRSxNQUFNLE9BQU8sR0FBRyxDQUFDLE9BQWlCLEVBQUUsR0FBVyxFQUFFLEVBQUU7O1FBQ2pELElBQUksQ0FBQyxNQUFNLENBQUMsT0FBTyxDQUFDLElBQUksUUFBQyxRQUFRLENBQUMsV0FBVyxDQUFDLE9BQU8sQ0FBQywwQ0FBRSxHQUFHLENBQUMsR0FBRyxFQUFDLEVBQUU7WUFDaEUsTUFBTSxJQUFJLFNBQVMsQ0FDakIsUUFBUSxJQUFJLENBQUMsUUFBUSxFQUFFLHVCQUF1QixJQUFJLENBQUMsU0FBUyxDQUMxRCxVQUFVLENBQUMsR0FBRyxDQUFDLENBQ2hCLEVBQUUsQ0FDSixDQUFDO1NBQ0g7UUFFRCxPQUFPLFFBQVEsQ0FBQyxXQUFXLENBQUMsT0FBTyxDQUFFLENBQUMsR0FBRyxDQUFDLEdBQUcsQ0FBQyxDQUFDO0lBQ2pELENBQUMsQ0FBQztJQUVGLE9BQU8sSUFBSSxDQUFDLE1BQU0sQ0FBVyxPQUFPLEVBQUUsR0FBRyxDQUFDLENBQUM7QUFDN0MsQ0FBQyxDQUFDO0FBRUYsTUFBTSxhQUFhLEdBQUcsQ0FBQyxJQUFVLEVBQUUsS0FBSyxHQUFHLENBQUMsRUFBa0IsRUFBRTtJQUM5RCxJQUFJLEtBQUssR0FBRyxJQUFJLENBQUMsTUFBTSxFQUFFO1FBQ3ZCLE1BQU0sSUFBSSxTQUFTLENBQUMsd0NBQXdDLENBQUMsQ0FBQztLQUMvRDtJQUVELE9BQU8sQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFDLE1BQU0sR0FBRyxLQUFLLENBQUMsRUFBRSxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUMsRUFBRSxJQUFJLENBQUMsTUFBTSxHQUFHLEtBQUssQ0FBQyxDQUFDLENBQUM7QUFDekUsQ0FBQyxDQUFDO0FBRUYsTUFBTSxDQUFDLE1BQU0sU0FBUyxHQUFHLENBQ3ZCLEdBQVksRUFDWixJQUFVLEVBQ1YsS0FBSyxHQUFHLENBQUMsRUFDVyxFQUFFO0lBQ3RCLE1BQU0sQ0FBQyxHQUFHLEVBQUUsVUFBVSxDQUFDLEdBQUcsYUFBYSxDQUFDLElBQUksRUFBRSxLQUFLLENBQUMsQ0FBQztJQUNyRCxPQUFPLENBQUMsU0FBUyxDQUFDLEdBQUcsRUFBRSxVQUFVLENBQUUsRUFBRSxHQUFHLENBQUMsQ0FBQztBQUM1QyxDQUFDLENBQUM7QUFFRjs7OztHQUlHO0FBQ0gsTUFBTSxDQUFDLE1BQU0sZUFBZSxHQUFHLENBQUMsSUFBWSxFQUFRLEVBQUU7SUFDcEQsSUFBSSxDQUFDLElBQUksRUFBRTtRQUNULE9BQU8sRUFBRSxDQUFDO0tBQ1g7SUFFRCxNQUFNLE1BQU0sR0FBRyxJQUFJLENBQUMsTUFBTSxDQUFDO0lBQzNCLElBQUksTUFBTSxZQUFZLENBQUMsQ0FBQyxLQUFLLEVBQUU7UUFDN0IsT0FBTyxDQUFDLEdBQUcsZUFBZSxDQUFDLE1BQU0sQ0FBQyxLQUFNLENBQUMsRUFBRSxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDO0tBQ3BFO0lBRUQsSUFBSSxNQUFNLFlBQVksQ0FBQyxDQUFDLEdBQUcsRUFBRTtRQUMzQixPQUFPLGVBQWUsQ0FBQyxNQUFNLENBQUMsS0FBTSxDQUFDLENBQUM7S0FDdkM7SUFFRCxNQUFNLElBQUksS0FBSyxDQUFDLHVCQUF1QixNQUFNLEVBQUUsQ0FBQyxDQUFDO0FBQ25ELENBQUMsQ0FBQztBQUVGOzs7O0dBSUc7QUFDSCxNQUFNLENBQUMsTUFBTSxnQkFBZ0IsR0FBRyxDQUFDLElBQVksRUFBVSxFQUFFO0lBQ3ZELElBQUksQ0FBQyxHQUFHLENBQUMsQ0FBQztJQUNWLElBQUksQ0FBQyxHQUFJLElBQUksQ0FBQyxNQUErQixDQUFDLE1BQU0sQ0FBQztJQUNyRCxPQUFPLENBQUMsS0FBSyxJQUFJLElBQUksQ0FBQyxLQUFLLElBQUksRUFBRTtRQUMvQixJQUFJLENBQUMsQ0FBQyxDQUFDLE9BQU8sRUFBRTtZQUNkLENBQUMsRUFBRSxDQUFDO1NBQ0w7UUFDRCxDQUFDLEdBQUcsQ0FBQyxDQUFDLEtBQUssQ0FBQztLQUNiO0lBRUQsT0FBTyxDQUFDLENBQUM7QUFDWCxDQUFDLENBQUMifQ==
